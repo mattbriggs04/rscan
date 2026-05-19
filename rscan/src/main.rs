@@ -1,6 +1,5 @@
-use objc2_foundation::{NSArray, NSString};
-use objc2_core_wlan::{CWWiFiClient, CWChannel};
+use rscan::scan_networks;
 
 fn main() {
-
+    networks = scan_networks();
 }
