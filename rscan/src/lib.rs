@@ -1,4 +1,5 @@
 use objc2_core_wlan::CWWiFiClient;
+use std::fmt;
 
 #[derive(Clone, Debug)]
 pub struct WifiNetInfo {
@@ -7,11 +8,22 @@ pub struct WifiNetInfo {
     pub signal: Option<isize>,
 }
 
+impl fmt::Display for WifiNetInfo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let ssid = self.ssid.as_deref().unwrap_or("<hidden>");
+        let bssid = self.bssid.as_deref().unwrap_or("MAC Unknown");
+        match self.signal {
+            Some(signal) => write!(f, "{} | {} | {} dBm", ssid, bssid, signal),
+            None => write!(f, "{} | {} | <unknown> dBm", ssid, bssid),
+        }
+    }
+}
 pub struct NetworkList {
     networks: Vec<WifiNetInfo>,
 }
 
 impl NetworkList {
+    // Create a network list by scanning all networks in the area
     pub fn scan() -> Result<Self, String> {
         unsafe {
             let client = CWWiFiClient::sharedWiFiClient();
@@ -44,6 +56,13 @@ impl NetworkList {
             .collect();
 
         NetworkList { networks: filtered }
+    }
+
+    pub fn sort_closest(mut self) -> Self {
+        self.networks.sort_by(|a, b| {
+            b.signal.unwrap_or(isize::MIN).cmp(&a.signal.unwrap_or(isize::MIN))
+        });
+        self
     }
 
     pub fn into_vec(self) -> Vec<WifiNetInfo> {
